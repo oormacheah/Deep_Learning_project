@@ -1,0 +1,26 @@
+1) Imbalanced training set
+    - Imbalanced dataset sampler
+
+2) Different Architectures
+    - neurons/channels number
+    - number/type of layers
+    - type of activation functions
+    - hyperparameters (LR...)
+        - Adam optimizer (?)
+
+3)  a) Increased dataset
+    b) Data augmentation (torchvision)
+
+Python Imaging Library (PIL) is the "format" of the images
+Torchvision.Compose() wraps the transforms you want to apply to your PIL dataset (images basically)
+    - You may want to use .ToTensor() and Normalize() (literally just normalizes (std and mean))
+
+- Images are given in different sizes, so a re-scaling of images is necessary for detecting correctly.
+
+- Optional solution shown, didn't understand
+
+- What does it mean to have more than 1 convolution?
+
+- When you give an example of a face to a system, balance it with an example of a non face xd
+
+
