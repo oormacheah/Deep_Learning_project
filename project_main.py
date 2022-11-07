@@ -1,5 +1,5 @@
 # -------------------------
-# Copied from load_data.py
+# Taken from load_data.py
 import numpy as np
 import torch
 import torchvision
@@ -34,7 +34,7 @@ valid_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, sa
 test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=1)
 
 classes = ('noface','face')
-# -------------------
+# -----------------------
 
 # Our implementation
 
@@ -48,8 +48,12 @@ def main():
     lr = 0.01
     momentum = 0.5
 
+    # Model choices
     model = Net()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum) # May select a different optimizer, like Adam
+    loss_fn = torch.nn.CrossEntropyLoss() # Check if there are other choices here
+
+    print(f'Training the NN with\nN_EPOCHS = {n_epochs}   lr = {lr}   momentum = {momentum} ...')
 
     for epoch in range(1, n_epochs+1):
         for data, target in train_loader:
@@ -64,9 +68,28 @@ def main():
             # Make predictions
             outputs = model(data)
             
+            # Compute loss
+            loss = loss_fn(outputs, target)
+            loss.backward()
 
+            # Adjust learning weights
+            optimizer.step()
 
-            exit()
+    # -----------------------
+    # From test.py
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data in test_loader:
+            images, labels = data
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+    print('Accuracy of the network on the 10000 test images: %d %%' % (
+        100 * correct / total))
+    # -----------------------
 
 if __name__ == '__main__':
     main()
