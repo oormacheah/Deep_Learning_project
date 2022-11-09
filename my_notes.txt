@@ -23,4 +23,4 @@ Torchvision.Compose() wraps the transforms you want to apply to your PIL dataset
 
 - When you give an example of a face to a system, balance it with an example of a non face xd
 
-
+- Flag 0 on imread() is for reading in grayscale mode
