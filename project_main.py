@@ -6,13 +6,17 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 
+from torchsampler import ImbalancedDatasetSampler
+
+
 train_dir = './train_images'
 test_dir = './test_images'
 
 transform = transforms.Compose(
     [transforms.Grayscale(), 
      transforms.ToTensor(), 
-     transforms.Normalize(mean=(0,),std=(1,))])
+     transforms.Normalize(mean=(0,),std=(1,))
+     ])
 
 train_data = torchvision.datasets.ImageFolder(train_dir, transform=transform)
 test_data = torchvision.datasets.ImageFolder(test_dir, transform=transform)
@@ -26,14 +30,16 @@ np.random.shuffle(indices_train)
 split_tv = int(np.floor(valid_size * num_train))
 train_new_idx, valid_idx = indices_train[split_tv:],indices_train[:split_tv]
 
-train_sampler = SubsetRandomSampler(train_new_idx)
-valid_sampler = SubsetRandomSampler(valid_idx)
+train_sampler = ImbalancedDatasetSampler(train_data)
+
+# train_sampler = SubsetRandomSampler(train_new_idx)
+# valid_sampler = SubsetRandomSampler(valid_idx)
 
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, sampler=train_sampler, num_workers=1)
-valid_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, sampler=valid_sampler, num_workers=1)
+# valid_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, sampler=valid_sampler, num_workers=1)
 test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=1)
 
-classes = ('noface','face')
+classes = ('noface', 'face')
 # -----------------------
 
 # Our implementation
@@ -42,18 +48,19 @@ from net import Net
 
 def main():
 
-    n_epochs = 4
+    n_epochs = 2
 
     # Hyperparameters
     lr = 0.01
-    momentum = 0.5
+    momentum = 0.9
 
     # Model choices
     model = Net()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum) # May select a different optimizer, like Adam
     loss_fn = torch.nn.CrossEntropyLoss() # Check if there are other choices here
 
-    print(f'Training the NN with\nN_EPOCHS = {n_epochs}   lr = {lr}   momentum = {momentum} ...')
+    sampler_type = type(train_sampler).__name__
+    print(f'Training the NN (using {sampler_type}) with\nN_EPOCHS = {n_epochs}   lr = {lr}   momentum = {momentum} ...')
 
     for epoch in range(n_epochs):
 
@@ -85,23 +92,29 @@ def main():
                 running_loss = 0.0
 
     # Save the model 
-    PATH = './facial_net.pth'
+    PATH = './net_11.pth'
     torch.save(model.state_dict(), PATH)
 
-    # -----------------------
-    # From test.py
-    # correct = 0
-    # total = 0
-    # with torch.no_grad():
-    #     for data in test_loader:
-    #         images, labels = data
-    #         outputs = model(images)
-    #         _, predicted = torch.max(outputs.data, 1)
-    #         total += labels.size(0)
-    #         correct += (predicted == labels).sum().item()
+    # Load the model
+    # PATH = './net_10.pth'
+    # model = Net()
+    # model.load_state_dict(torch.load(PATH))
 
-    # print('Accuracy of the network on the 10000 test images: %d %%' % (
-    #     100 * correct / total))
+    # ----------- Global accuracy ---------------
+    # From test.py
+
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data in test_loader:
+            images, labels = data
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+    print('Global accuracy of the network on the 10000 test images: %d %%' % (
+        100 * correct / total))
     # -----------------------
 
     # Testing accuracy per class
